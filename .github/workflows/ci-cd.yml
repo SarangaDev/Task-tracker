@@ -153,3 +153,37 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  # ─────────────────────────────────────────────────────────
+  # JOB 4 — Deploy PR to Self-Hosted Instance
+  # ─────────────────────────────────────────────────────────
+  deploy-pr:
+    name: Deploy PR
+    needs: [build-and-push]
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # Example deployment steps using Docker
+      - name: Build Docker image
+        run: |
+          # The code is checked out on your instance, so you can just run docker build
+          docker build -t task-tracker-app:${{ github.sha }} .
+
+      - name: Run Docker container (or restart service)
+        run: |
+          # Stop the old container if it exists
+          docker stop task-tracker || true
+          docker rm task-tracker || true
+
+          # Run the new container mapping it to port 80 or 8080
+          # We pass environment variables using -e and grab them from GitHub Secrets
+          docker run -d \
+            --name task-tracker \
+            -p 8080:80 \
+            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e NODE_ENV="production" \
+            task-tracker-app:${{ github.sha }}
