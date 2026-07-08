@@ -192,18 +192,29 @@ jobs:
           docker rm task-tracker || true
 
           # 4. Run the new app container on the same network
-          # Mapping to port 5000 because that's what your Dockerfile exposes
+          # No direct port mapping needed; Caddy will route traffic securely!
           docker run -d \
             --name task-tracker \
             --network task-network \
-            -p 8080:5000 \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
             -e JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
             -e NODE_ENV="production" \
             task-tracker-app:${{ github.sha }}
 
-          # 5. Seed the database
+          # 5. Start Caddy for free SSL and reverse proxy
+          docker stop caddy || true
+          docker rm caddy || true
+          docker run -d \
+            --name caddy \
+            --network task-network \
+            -p 80:80 \
+            -p 443:443 \
+            -v caddy_data:/data \
+            caddy:2-alpine \
+            caddy reverse-proxy --from task-tracker-saranga.duckdns.org --to task-tracker:5000
+
+          # 6. Seed the database
           # Wait 10 seconds for the app container to finish running migrations
           sleep 10
           docker exec task-tracker sh -c "npm install -g ts-node typescript && ts-node prisma/seed.ts"
