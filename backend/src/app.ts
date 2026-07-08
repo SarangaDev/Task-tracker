@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
+import path from "path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
@@ -83,8 +84,22 @@ app.use("/api/auth", authRoutes);
 app.use("/api/tasks", tasksRoutes);
 app.use("/api/admin", adminRoutes);
 
-// ─── 404 handler ──────────────────────────────────────────────────────────────
-app.use((req: Request, res: Response, next: NextFunction) => {
+// ─── Serve Static Frontend (Production) ─────────────────────────────────────────
+if (config.nodeEnv === "production") {
+  const publicPath = path.join(__dirname, "../public");
+  app.use(express.static(publicPath));
+
+  app.get("*", (req: Request, res: Response, next: NextFunction) => {
+    // Exclude /api routes from the SPA catch-all
+    if (req.path.startsWith("/api")) {
+      return next();
+    }
+    res.sendFile(path.join(publicPath, "index.html"));
+  });
+}
+
+// ─── 404 handler for API routes ───────────────────────────────────────────────
+app.use("/api", (req: Request, res: Response, next: NextFunction) => {
   next(new NotFoundError(`Route ${req.method} ${req.originalUrl}`));
 });
 
