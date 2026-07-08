@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
+import { csrfProtect } from "./middleware/csrf";
 
 import { errorHandler } from "./middleware/errorHandler";
 import { NotFoundError } from "./utils/errors";
@@ -28,6 +29,9 @@ app.use(
 
 // ─── Cookie parsing ────────────────────────────────────────────────────────────
 app.use(cookieParser());
+
+// ─── CSRF protection (Double Submit Cookie pattern) ────────────────────────────
+app.use(csrfProtect);
 
 // ─── Rate limiting ─────────────────────────────────────────────────────────────
 const authLimiter = rateLimit({
@@ -81,7 +85,7 @@ app.use("/api/admin", adminRoutes);
 
 // ─── 404 handler ──────────────────────────────────────────────────────────────
 app.use((req: Request, res: Response, next: NextFunction) => {
-  next(new NotFoundError(Route $req.method} $req.originalUrl}));
+  next(new NotFoundError(`Route ${req.method} ${req.originalUrl}`));
 });
 
 // ─── Global error handler ─────────────────────────────────────────────────────
