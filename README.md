@@ -1,11 +1,14 @@
 # Task Tracker
 
+**Live Application:** [https://task-tracker-saranga.duckdns.org](https://task-tracker-saranga.duckdns.org) _(Deployed on my own personal server for demonstration purposes)_
+
 A full-stack task management application with real-time updates, role-based access control, and cookie-based JWT authentication.
 
 ---
 
 ## Table of Contents
 
+- [Technology Stack & Rationale](#technology-stack--rationale)
 - [Setup Instructions](#setup-instructions)
   - [Prerequisites](#prerequisites)
   - [Database Setup](#database-setup)
@@ -22,15 +25,30 @@ A full-stack task management application with real-time updates, role-based acce
 
 ---
 
+## Technology Stack & Rationale
+
+This project's technology stack was intentionally chosen after researching the technologies utilized at **Newnop**, aligning with their modern, scalable development practices:
+
+- **Frontend:** Vue 3, Pinia, TypeScript, Vite
+- **Backend:** Node.js, Express, TypeScript
+- **Database:** PostgreSQL, Prisma ORM
+- **Real-time:** Socket.io
+
+This combination ensures end-to-end type safety, excellent developer experience, and robust performance.
+
+---
+
 ## Setup Instructions
+
+> **Looking for a detailed step-by-step local setup?** Check out the [Complete Local Setup Guide](LOCAL_SETUP.md) for running the application entirely locally without Docker.
 
 ### Prerequisites
 
-| Tool | Version |
-|------|---------|
-| Node.js | v18+ |
-| npm | v9+ |
-| PostgreSQL | v14+ |
+| Tool                    | Version                             |
+| ----------------------- | ----------------------------------- |
+| Node.js                 | v18+                                |
+| npm                     | v9+                                 |
+| PostgreSQL              | v14+                                |
 | Docker & Docker Compose | (optional, for containerised setup) |
 
 ---
@@ -46,11 +64,11 @@ docker compose up postgres -d
 
 The container will be available at `localhost:5432` with:
 
-| Field | Value |
-|-------|-------|
-| User | `taskuser` |
+| Field    | Value          |
+| -------- | -------------- |
+| User     | `taskuser`     |
 | Password | `taskpassword` |
-| Database | `tasktracker` |
+| Database | `tasktracker`  |
 
 **Option B — Local Postgres**
 
@@ -97,25 +115,25 @@ The API will be available at **http://localhost:3000**.
 
 After running `npm run db:seed`:
 
-| Role | Email | Password |
-|------|-------|----------|
+| Role  | Email                   | Password    |
+| ----- | ----------------------- | ----------- |
 | Admin | `admin@tasktracker.com` | `Admin@123` |
-| User | `user@tasktracker.com` | `User@123` |
+| User  | `user@tasktracker.com`  | `User@123`  |
 
 #### Available Backend Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server with hot-reload |
-| `npm run build` | Compile TypeScript to `dist/` |
-| `npm start` | Start production server (requires build) |
-| `npm test` | Run Jest test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run db:migrate` | Run pending Prisma migrations |
-| `npm run db:generate` | Regenerate Prisma client |
-| `npm run db:seed` | Seed demo users and tasks |
-| `npm run db:studio` | Open Prisma Studio (GUI for the DB) |
-| `npm run lint` | Lint source files |
+| Script                | Description                              |
+| --------------------- | ---------------------------------------- |
+| `npm run dev`         | Start development server with hot-reload |
+| `npm run build`       | Compile TypeScript to `dist/`            |
+| `npm start`           | Start production server (requires build) |
+| `npm test`            | Run Jest test suite                      |
+| `npm run test:watch`  | Run tests in watch mode                  |
+| `npm run db:migrate`  | Run pending Prisma migrations            |
+| `npm run db:generate` | Regenerate Prisma client                 |
+| `npm run db:seed`     | Seed demo users and tasks                |
+| `npm run db:studio`   | Open Prisma Studio (GUI for the DB)      |
+| `npm run lint`        | Lint source files                        |
 
 ---
 
@@ -143,12 +161,12 @@ The frontend will be available at **http://localhost:5173**.
 
 #### Available Frontend Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Production build |
+| Script            | Description              |
+| ----------------- | ------------------------ |
+| `npm run dev`     | Start Vite dev server    |
+| `npm run build`   | Production build         |
 | `npm run preview` | Preview production build |
-| `npm run lint` | Lint Vue/TS source files |
+| `npm run lint`    | Lint Vue/TS source files |
 
 ---
 
@@ -161,11 +179,11 @@ Run the entire stack (Postgres + Backend + Frontend + Nginx) with a single comma
 docker compose up --build
 ```
 
-| Service | URL |
-|---------|-----|
+| Service              | URL                   |
+| -------------------- | --------------------- |
 | Frontend (via Nginx) | http://localhost:3000 |
-| Backend API | http://localhost:5000 |
-| Postgres | localhost:5432 |
+| Backend API          | http://localhost:5000 |
+| Postgres             | localhost:5432        |
 
 > **Important:** Change `JWT_SECRET` in `docker-compose.yml` to a strong random value before any public deployment.
 
@@ -192,14 +210,14 @@ PORT=3000
 NODE_ENV=development
 ```
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DATABASE_URL` | ✅ | Prisma-compatible PostgreSQL connection string |
-| `JWT_SECRET` | ✅ | Secret for signing JWTs — keep this private |
-| `JWT_EXPIRES_IN` | ✅ | JWT expiry duration |
-| `PORT` | ✅ | HTTP port for the Express server |
-| `NODE_ENV` | ✅ | `development`, `production`, or `test` |
-| `FRONTEND_URL` | ❌ | Allowed CORS origin (defaults to `http://localhost:5173`) |
+| Variable         | Required | Description                                               |
+| ---------------- | -------- | --------------------------------------------------------- |
+| `DATABASE_URL`   | ✅       | Prisma-compatible PostgreSQL connection string            |
+| `JWT_SECRET`     | ✅       | Secret for signing JWTs — keep this private               |
+| `JWT_EXPIRES_IN` | ✅       | JWT expiry duration                                       |
+| `PORT`           | ✅       | HTTP port for the Express server                          |
+| `NODE_ENV`       | ✅       | `development`, `production`, or `test`                    |
+| `FRONTEND_URL`   | ❌       | Allowed CORS origin (defaults to `http://localhost:5173`) |
 
 #### Frontend — `frontend/.env`
 
@@ -284,16 +302,16 @@ Public endpoints (`/api/auth/login`, `/api/auth/register`, `/api/auth/csrf`) are
 
 Two roles exist: `USER` and `ADMIN`.
 
-| Capability | USER | ADMIN |
-|------------|------|-------|
-| Create own tasks | ✅ | ✅ |
-| Read own tasks | ✅ | ✅ |
-| Update own tasks | ✅ | ✅ |
-| Delete own tasks | ✅ | ✅ |
-| Read **all** tasks | ❌ | ✅ |
-| Update **any** task | ❌ | ✅ |
-| Delete **any** task | ❌ | ✅ |
-| Search users | ❌ | ✅ |
+| Capability          | USER | ADMIN |
+| ------------------- | ---- | ----- |
+| Create own tasks    | ✅   | ✅    |
+| Read own tasks      | ✅   | ✅    |
+| Update own tasks    | ✅   | ✅    |
+| Delete own tasks    | ✅   | ✅    |
+| Read **all** tasks  | ❌   | ✅    |
+| Update **any** task | ❌   | ✅    |
+| Delete **any** task | ❌   | ✅    |
+| Search users        | ❌   | ✅    |
 
 The `authenticate` middleware verifies the JWT from the cookie. The `requireRole` middleware enforces the minimum role for admin routes.
 
@@ -304,6 +322,7 @@ All incoming request bodies and query strings are validated with [Zod](https://z
 #### 5. Real-Time Updates via Socket.io
 
 When a task is created, updated, or deleted, the backend emits a Socket.io event to:
+
 - The **owner's room** (`room_user_<userId>`) — so the owner's dashboard updates live.
 - The **admin room** (`room_admin`) — so admins see all changes in real time.
 
@@ -312,6 +331,7 @@ This removes the need for polling and gives users an instant feedback loop.
 #### 6. Pagination & Filtering
 
 All list endpoints (`GET /api/tasks`, `GET /api/admin/tasks`) support:
+
 - `page` / `limit` — offset pagination.
 - `status` filter — `TODO`, `IN_PROGRESS`, `DONE`.
 - `priority` filter — `LOW`, `MEDIUM`, `HIGH`.
@@ -321,6 +341,7 @@ All list endpoints (`GET /api/tasks`, `GET /api/admin/tasks`) support:
 #### 7. Rate Limiting
 
 Two tiers of rate limiting are applied via `express-rate-limit`:
+
 - **Auth endpoints** (`/api/auth/*`): 500 requests per 15 minutes.
 - **All other API endpoints**: 200 requests per 15 minutes.
 
@@ -333,6 +354,7 @@ Two tiers of rate limiting are applied via `express-rate-limit`:
 PostgreSQL was chosen for its reliability, rich feature set, and excellent support for complex queries. Prisma provides a type-safe query builder, automatic migration management, and a schema-first workflow.
 
 Key schema design choices:
+
 - `cuid()` primary keys — URL-safe, collision-resistant, shorter than UUID v4.
 - Cascade delete on `User → Task` — deleting a user removes all their tasks.
 - Database-level indexes on `users.email`, `tasks.userId`, and `tasks.status` for query performance.
@@ -370,12 +392,14 @@ Pinia is used for global state (auth session, task list). It integrates tightly 
 ## Future Improvements
 
 ### Security
+
 - **Token revocation / refresh tokens** — Implement refresh token rotation with a server-side deny list (Redis) so that logout is cryptographically effective and long sessions remain secure.
 - **Email verification** — Send a confirmation link on registration before activating the account.
 - **Two-factor authentication (2FA)** — Add TOTP-based 2FA for an additional authentication factor.
 - **Audit logging** — Record who changed what and when to a dedicated audit table.
 
 ### Features
+
 - **Task comments / activity feed** — Allow users to comment on tasks with a full activity history.
 - **Task assignments** — Allow admins or owners to assign tasks to other users.
 - **File attachments** — Support file uploads (e.g. to S3/GCS) as task attachments.
@@ -385,6 +409,7 @@ Pinia is used for global state (auth session, task list). It integrates tightly 
 - **Due-date reminders** — Scheduled cron job to notify users of approaching deadlines.
 
 ### Architecture & Infrastructure
+
 - **Redis adapter for Socket.io** — Replace the default in-memory adapter to support horizontal scaling.
 - **Response caching** — Cache frequent read queries (e.g. user profile, task lists) with Redis to reduce database load.
 - **Background job queue** — Use BullMQ for email delivery, report generation, and other async workloads.
@@ -392,11 +417,13 @@ Pinia is used for global state (auth session, task list). It integrates tightly 
 - **OpenAPI / Swagger** — Auto-generate interactive API documentation from route definitions.
 
 ### Testing
+
 - **Integration test coverage** — End-to-end tests covering the full HTTP → database flow per endpoint.
 - **Frontend component tests** — Vitest + Vue Test Utils tests for UI components.
 - **Load testing** — Benchmark with k6 or Artillery to establish baseline performance metrics.
 
 ### Developer Experience
+
 - **CI/CD pipeline** — Automate linting, testing, building, and deployment on every push.
 - **Conventional commits + changelog** — Enforce commit conventions and auto-generate a `CHANGELOG.md`.
 - **Startup environment validation** — Fail fast with a clear error if required env vars are missing or malformed (e.g. using `zod` to parse `process.env`).
@@ -407,10 +434,10 @@ Pinia is used for global state (auth session, task list). It integrates tightly 
 
 A **Postman Collection** and **Postman Environment** are provided in the `postman/` directory at the project root:
 
-| File | Description |
-|------|-------------|
-| `postman/TaskTracker.postman_collection.json` | All API endpoints with example request bodies, pre-request scripts, and test scripts |
-| `postman/TaskTracker.postman_environment.json` | Environment variables (`baseUrl`, `csrfToken`) |
+| File                                           | Description                                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `postman/TaskTracker.postman_collection.json`  | All API endpoints with example request bodies, pre-request scripts, and test scripts |
+| `postman/TaskTracker.postman_environment.json` | Environment variables (`baseUrl`, `csrfToken`)                                       |
 
 ### Importing into Postman
 
@@ -422,39 +449,40 @@ A **Postman Collection** and **Postman Environment** are provided in the `postma
 
 ### Endpoint Reference
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/health` | Public | Health check |
-| `GET` | `/api/auth/csrf` | Public | Get CSRF token (if session exists) |
-| `POST` | `/api/auth/register` | Public | Register new user |
-| `POST` | `/api/auth/login` | Public | Login |
-| `POST` | `/api/auth/logout` | 🔒 User | Logout (clears cookies) |
-| `GET` | `/api/auth/me` | 🔒 User | Get current user profile |
-| `GET` | `/api/tasks` | 🔒 User | List own tasks (paginated, filterable) |
-| `POST` | `/api/tasks` | 🔒 User | Create a task |
-| `GET` | `/api/tasks/:id` | 🔒 User | Get task by ID |
-| `PUT` | `/api/tasks/:id` | 🔒 User | Update a task |
-| `DELETE` | `/api/tasks/:id` | 🔒 User | Delete a task |
-| `GET` | `/api/admin/tasks` | 🔒 Admin | List **all** tasks in the system |
-| `GET` | `/api/admin/tasks/:id` | 🔒 Admin | Get any task by ID |
-| `PUT` | `/api/admin/tasks/:id` | 🔒 Admin | Update any task |
-| `DELETE` | `/api/admin/tasks/:id` | 🔒 Admin | Delete any task |
-| `GET` | `/api/admin/users/search` | 🔒 Admin | Search users by name or email |
+| Method   | Path                      | Auth     | Description                            |
+| -------- | ------------------------- | -------- | -------------------------------------- |
+| `GET`    | `/health`                 | Public   | Health check                           |
+| `GET`    | `/api/auth/csrf`          | Public   | Get CSRF token (if session exists)     |
+| `POST`   | `/api/auth/register`      | Public   | Register new user                      |
+| `POST`   | `/api/auth/login`         | Public   | Login                                  |
+| `POST`   | `/api/auth/logout`        | 🔒 User  | Logout (clears cookies)                |
+| `GET`    | `/api/auth/me`            | 🔒 User  | Get current user profile               |
+| `GET`    | `/api/tasks`              | 🔒 User  | List own tasks (paginated, filterable) |
+| `POST`   | `/api/tasks`              | 🔒 User  | Create a task                          |
+| `GET`    | `/api/tasks/:id`          | 🔒 User  | Get task by ID                         |
+| `PUT`    | `/api/tasks/:id`          | 🔒 User  | Update a task                          |
+| `DELETE` | `/api/tasks/:id`          | 🔒 User  | Delete a task                          |
+| `GET`    | `/api/admin/tasks`        | 🔒 Admin | List **all** tasks in the system       |
+| `GET`    | `/api/admin/tasks/:id`    | 🔒 Admin | Get any task by ID                     |
+| `PUT`    | `/api/admin/tasks/:id`    | 🔒 Admin | Update any task                        |
+| `DELETE` | `/api/admin/tasks/:id`    | 🔒 Admin | Delete any task                        |
+| `GET`    | `/api/admin/users/search` | 🔒 Admin | Search users by name or email          |
 
 ### Query Parameters (Task List Endpoints)
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `page` | `number` | `1` | Page number |
-| `limit` | `number` | `10` | Items per page (max `100`) |
-| `status` | `TODO \| IN_PROGRESS \| DONE` | — | Filter by task status |
-| `priority` | `LOW \| MEDIUM \| HIGH` | — | Filter by task priority |
-| `search` | `string` | — | Search title and description (case-insensitive) |
-| `userId` | `string` | — | **(Admin only)** Filter by owner user ID |
+| Parameter  | Type                          | Default | Description                                     |
+| ---------- | ----------------------------- | ------- | ----------------------------------------------- |
+| `page`     | `number`                      | `1`     | Page number                                     |
+| `limit`    | `number`                      | `10`    | Items per page (max `100`)                      |
+| `status`   | `TODO \| IN_PROGRESS \| DONE` | —       | Filter by task status                           |
+| `priority` | `LOW \| MEDIUM \| HIGH`       | —       | Filter by task priority                         |
+| `search`   | `string`                      | —       | Search title and description (case-insensitive) |
+| `userId`   | `string`                      | —       | **(Admin only)** Filter by owner user ID        |
 
 ### Standard Response Envelope
 
 **Success (with data):**
+
 ```json
 {
   "status": "success",
@@ -470,26 +498,25 @@ A **Postman Collection** and **Postman Environment** are provided in the `postma
 ```
 
 **Error:**
+
 ```json
 {
   "status": "fail",
   "message": "Human-readable error description",
-  "errors": [
-    { "field": "email", "message": "Invalid email address" }
-  ]
+  "errors": [{ "field": "email", "message": "Invalid email address" }]
 }
 ```
 
 ### HTTP Status Codes
 
-| Code | Meaning |
-|------|---------|
-| `200` | OK |
-| `201` | Created |
-| `204` | No Content (e.g. DELETE success) |
-| `400` | Bad Request — validation failed |
-| `401` | Unauthorized — missing or invalid token |
+| Code  | Meaning                                             |
+| ----- | --------------------------------------------------- |
+| `200` | OK                                                  |
+| `201` | Created                                             |
+| `204` | No Content (e.g. DELETE success)                    |
+| `400` | Bad Request — validation failed                     |
+| `401` | Unauthorized — missing or invalid token             |
 | `403` | Forbidden — insufficient role or invalid CSRF token |
-| `404` | Not Found |
-| `429` | Too Many Requests — rate limit exceeded |
-| `500` | Internal Server Error |
+| `404` | Not Found                                           |
+| `429` | Too Many Requests — rate limit exceeded             |
+| `500` | Internal Server Error                               |
