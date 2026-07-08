@@ -190,7 +190,7 @@ jobs:
           # 3. Stop the old app container if it exists
           docker stop task-tracker || true
           docker rm task-tracker || true
-          
+
           # 4. Run the new app container on the same network
           # Mapping to port 5000 because that's what your Dockerfile exposes
           docker run -d \
@@ -202,3 +202,8 @@ jobs:
             -e JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
             -e NODE_ENV="production" \
             task-tracker-app:${{ github.sha }}
+
+          # 5. Seed the database
+          # Wait 10 seconds for the app container to finish running migrations
+          sleep 10
+          docker exec task-tracker sh -c "npm install -g ts-node typescript && ts-node prisma/seed.ts"
