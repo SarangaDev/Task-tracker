@@ -217,4 +217,4 @@ jobs:
           # 6. Seed the database
           # Wait 10 seconds for the app container to finish running migrations
           sleep 10
-          docker exec task-tracker sh -c "npm install -g ts-node typescript && ts-node prisma/seed.ts"
+          docker exec task-tracker sh -c "npm install -g tsx && tsx prisma/seed.ts"
