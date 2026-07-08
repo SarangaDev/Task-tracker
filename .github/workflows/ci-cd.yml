@@ -174,16 +174,31 @@ jobs:
 
       - name: Run Docker container (or restart service)
         run: |
-          # Stop the old container if it exists
+          # 1. Create a network so the app and database can talk
+          docker network create task-network || true
+          
+          # 2. Start a Postgres database container (will skip if already running)
+          docker run -d \
+            --name postgres \
+            --network task-network \
+            -e POSTGRES_USER=taskuser \
+            -e POSTGRES_PASSWORD=taskpassword \
+            -e POSTGRES_DB=tasktracker \
+            -v postgres_data:/var/lib/postgresql/data \
+            postgres:15-alpine || true
+
+          # 3. Stop the old app container if it exists
           docker stop task-tracker || true
           docker rm task-tracker || true
-
-          # Run the new container mapping it to port 80 or 8080
-          # We pass environment variables using -e and grab them from GitHub Secrets
+          
+          # 4. Run the new app container on the same network
+          # Mapping to port 5000 because that's what your Dockerfile exposes
           docker run -d \
             --name task-tracker \
-            -p 8080:80 \
+            --network task-network \
+            -p 8080:5000 \
             -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
             -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            -e JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}" \
             -e NODE_ENV="production" \
             task-tracker-app:${{ github.sha }}
