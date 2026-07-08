@@ -1,0 +1,762 @@
+{
+  "info": {
+    "_postman_id": "tasktracker-collection-v1",
+    "name": "Task Tracker API",
+    "description": "Complete API collection for the Task Tracker application.\n\n## Quick Start\n1. Import this collection AND `TaskTracker.postman_environment.json`.\n2. Select the **TaskTracker - Local** environment from the dropdown.\n3. Run **Auth → Login (User)** or **Auth → Register** first.\n   The test scripts will automatically capture the CSRF token.\n4. All subsequent requests are ready to use.\n\n## Authentication\nThe API uses HttpOnly cookies for JWT storage. Postman handles cookies automatically. The CSRF token is captured into the `csrfToken` environment variable by the login/register scripts and injected as the `X-CSRF-Token` header via a collection-level pre-request script.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Inject the CSRF token header for all state-mutating requests",
+          "const method = pm.request.method;",
+          "const safeMethods = ['GET', 'HEAD', 'OPTIONS'];",
+          "if (!safeMethods.includes(method)) {",
+          "    const csrfToken = pm.environment.get('csrfToken');",
+          "    if (csrfToken) {",
+          "        pm.request.headers.add({ key: 'X-CSRF-Token', value: csrfToken });",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verify the API server is running."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Task Tracker API is running\",\n  \"timestamp\": \"2024-01-01T00:00:00.000Z\",\n  \"environment\": \"development\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints — register, login, logout, and profile.",
+      "item": [
+        {
+          "name": "Get CSRF Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.csrfToken) {",
+                  "        pm.environment.set('csrfToken', json.data.csrfToken);",
+                  "        console.log('CSRF token refreshed:', json.data.csrfToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/csrf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "csrf"]
+            },
+            "description": "Issue/refresh a CSRF token for an existing authenticated session.\n\nReturns `204 No Content` if no session cookie is present. Returns `200` with the new token if already logged in.\n\nCall this on app boot if you already have a session."
+          },
+          "response": [
+            {
+              "name": "200 OK (logged in)",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"csrfToken\": \"a3f1c...\"\n  }\n}"
+            },
+            {
+              "name": "204 No Content (not logged in)",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    // Extract csrf_token from Set-Cookie header",
+                  "    const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+                  "    const match = setCookie.match(/csrf_token=([^;]+)/);",
+                  "    if (match) {",
+                  "        pm.environment.set('csrfToken', match[1]);",
+                  "        console.log('CSRF token captured from register:', match[1]);",
+                  "    }",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.user) {",
+                  "        pm.environment.set('userId', json.data.user.id);",
+                  "    }",
+                  "    pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "    pm.test('Response has user data', () => {",
+                  "        pm.expect(json.data.user).to.have.property('id');",
+                  "        pm.expect(json.data.user).to.have.property('email');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"Password1\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Password rules:** min 8 chars, at least one uppercase, one lowercase, one number.\n\nOn success, sets `access_token` (HttpOnly) and `csrf_token` cookies."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Account created successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"clx...\",\n      \"name\": \"Jane Smith\",\n      \"email\": \"jane@example.com\",\n      \"role\": \"USER\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "400 Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"password\", \"message\": \"Password must contain at least one uppercase letter, one lowercase letter, and one number\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login (User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+                  "    const match = setCookie.match(/csrf_token=([^;]+)/);",
+                  "    if (match) {",
+                  "        pm.environment.set('csrfToken', match[1]);",
+                  "        console.log('CSRF token captured from login:', match[1]);",
+                  "    }",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.user) {",
+                  "        pm.environment.set('userId', json.data.user.id);",
+                  "        pm.environment.set('userRole', json.data.user.role);",
+                  "    }",
+                  "    pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "    pm.test('Login successful', () => {",
+                  "        pm.expect(json.status).to.equal('success');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@tasktracker.com\",\n  \"password\": \"User@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email and password.\n\nOn success, sets `access_token` (HttpOnly) and `csrf_token` cookies. The test script captures the CSRF token automatically.\n\n**Seeded credentials:**\n- User: `user@tasktracker.com` / `User@123`\n- Admin: `admin@tasktracker.com` / `Admin@123`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"clx...\",\n      \"name\": \"John Doe\",\n      \"email\": \"user@tasktracker.com\",\n      \"role\": \"USER\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Invalid credentials\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const setCookie = pm.response.headers.get('Set-Cookie') || '';",
+                  "    const match = setCookie.match(/csrf_token=([^;]+)/);",
+                  "    if (match) {",
+                  "        pm.environment.set('csrfToken', match[1]);",
+                  "        console.log('CSRF token captured (admin login):', match[1]);",
+                  "    }",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.user) {",
+                  "        pm.environment.set('userId', json.data.user.id);",
+                  "        pm.environment.set('userRole', json.data.user.role);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@tasktracker.com\",\n  \"password\": \"Admin@123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as the admin user (seeded by `npm run db:seed`).\n\nGrants access to all `/api/admin/*` endpoints."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns the currently authenticated user's profile.\n\nRequires a valid `access_token` cookie."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"clx...\",\n      \"name\": \"John Doe\",\n      \"email\": \"user@tasktracker.com\",\n      \"role\": \"USER\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"No token provided\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    pm.environment.unset('csrfToken');",
+                  "    pm.environment.unset('userId');",
+                  "    pm.environment.unset('userRole');",
+                  "    console.log('Logged out, environment variables cleared.');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Clears the `access_token` and `csrf_token` cookies server-side.\n\nRequires a valid `access_token` cookie."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Logged out successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tasks (User)",
+      "description": "Task CRUD for the currently authenticated user. Each user can only access their own tasks.",
+      "item": [
+        {
+          "name": "List My Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has data and meta', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('data');",
+                  "    pm.expect(json).to.have.property('meta');",
+                  "    pm.expect(json.meta).to.have.property('total');",
+                  "    pm.expect(json.meta).to.have.property('totalPages');",
+                  "    // Capture first task ID for downstream requests",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.environment.set('taskId', json.data[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default 1)" },
+                { "key": "limit", "value": "10", "description": "Items per page, max 100 (default 10)" },
+                { "key": "status", "value": "TODO", "description": "Filter: TODO | IN_PROGRESS | DONE", "disabled": true },
+                { "key": "priority", "value": "HIGH", "description": "Filter: LOW | MEDIUM | HIGH", "disabled": true },
+                { "key": "search", "value": "deploy", "description": "Search title and description", "disabled": true }
+              ]
+            },
+            "description": "Returns the authenticated user's tasks with pagination support.\n\nOptional filters: `status`, `priority`, `search`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": [\n    {\n      \"id\": \"clx...\",\n      \"title\": \"Set up project repository\",\n      \"description\": \"Initialize git repo and configure CI/CD pipeline\",\n      \"status\": \"DONE\",\n      \"priority\": \"HIGH\",\n      \"dueDate\": null,\n      \"userId\": \"clx...\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n      \"user\": { \"id\": \"clx...\", \"name\": \"John Doe\", \"email\": \"user@tasktracker.com\" }\n    }\n  ],\n  \"meta\": {\n    \"total\": 5,\n    \"page\": 1,\n    \"limit\": 10,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.task) {",
+                  "        pm.environment.set('taskId', json.data.task.id);",
+                  "        console.log('Created task ID:', json.data.task.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement login page\",\n  \"description\": \"Build the Vue login component with form validation\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"dueDate\": \"2024-12-31T00:00:00.000Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "Create a new task for the authenticated user.\n\n**Required:** `title`\n**Optional:** `description`, `status` (default `TODO`), `priority` (default `MEDIUM`), `dueDate`\n\nEnums:\n- `status`: `TODO`, `IN_PROGRESS`, `DONE`\n- `priority`: `LOW`, `MEDIUM`, `HIGH`"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Task created successfully\",\n  \"data\": {\n    \"task\": {\n      \"id\": \"clx...\",\n      \"title\": \"Implement login page\",\n      \"description\": \"Build the Vue login component with form validation\",\n      \"status\": \"TODO\",\n      \"priority\": \"HIGH\",\n      \"dueDate\": \"2024-12-31T00:00:00.000Z\",\n      \"userId\": \"clx...\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n      \"user\": { \"id\": \"clx...\", \"name\": \"John Doe\", \"email\": \"user@tasktracker.com\" }\n    }\n  }\n}"
+            },
+            {
+              "name": "400 Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"title\", \"message\": \"Title is required\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Retrieve a single task by its ID.\n\nThe authenticated user must be the task owner. Admins can access any task."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"task\": {\n      \"id\": \"clx...\",\n      \"title\": \"Implement login page\",\n      \"status\": \"TODO\",\n      \"priority\": \"HIGH\",\n      \"dueDate\": null,\n      \"userId\": \"clx...\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\",\n      \"user\": { \"id\": \"clx...\", \"name\": \"John Doe\", \"email\": \"user@tasktracker.com\" }\n    }\n  }\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Task not found\"\n}"
+            },
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"You do not have access to this task\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"MEDIUM\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Update one or more fields of a task. All fields are optional.\n\nThe authenticated user must be the task owner. Admins can update any task."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"message\": \"Task updated successfully\",\n  \"data\": {\n    \"task\": {\n      \"id\": \"clx...\",\n      \"title\": \"Implement login page\",\n      \"status\": \"IN_PROGRESS\",\n      \"priority\": \"MEDIUM\",\n      \"dueDate\": null,\n      \"userId\": \"clx...\",\n      \"updatedAt\": \"2024-01-02T00:00:00.000Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 204', () => pm.response.to.have.status(204));",
+                  "if (pm.response.code === 204) {",
+                  "    pm.environment.unset('taskId');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/{{taskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "{{taskId}}"]
+            },
+            "description": "Permanently delete a task.\n\nThe authenticated user must be the task owner. Admins can delete any task.\n\nReturns `204 No Content` on success."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "status": "No Content",
+              "code": 204,
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin-only endpoints. **Log in as admin first** using Auth → Login (Admin).\n\nAdmins can read, update, and delete any task regardless of owner, and search all users.",
+      "item": [
+        {
+          "name": "List All Tasks",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.data && json.data.length > 0) {",
+                  "        pm.environment.set('adminTaskId', json.data[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tasks?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tasks"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "status", "value": "TODO", "disabled": true },
+                { "key": "priority", "value": "HIGH", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "userId", "value": "", "description": "Filter by a specific user's ID", "disabled": true }
+              ]
+            },
+            "description": "Returns all tasks in the system (across all users), paginated.\n\nSupports all standard filters plus `userId` to scope to a specific user."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": [\n    {\n      \"id\": \"clx...\",\n      \"title\": \"Review all user tasks\",\n      \"status\": \"IN_PROGRESS\",\n      \"priority\": \"HIGH\",\n      \"userId\": \"clx...\",\n      \"user\": { \"id\": \"clx...\", \"name\": \"Admin User\", \"email\": \"admin@tasktracker.com\" }\n    }\n  ],\n  \"meta\": { \"total\": 7, \"page\": 1, \"limit\": 10, \"totalPages\": 1 }\n}"
+            },
+            {
+              "name": "403 Forbidden (not admin)",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Forbidden: insufficient role\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Any Task by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tasks/{{adminTaskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tasks", "{{adminTaskId}}"]
+            },
+            "description": "Retrieve any task by ID regardless of owner (admin only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Any Task",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DONE\",\n  \"priority\": \"LOW\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tasks/{{adminTaskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tasks", "{{adminTaskId}}"]
+            },
+            "description": "Update any task in the system (admin only). All fields are optional."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Any Task",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tasks/{{adminTaskId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tasks", "{{adminTaskId}}"]
+            },
+            "description": "Permanently delete any task in the system (admin only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/search?q=john",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "users", "search"],
+              "query": [
+                { "key": "q", "value": "john", "description": "Search term — matches name or email" }
+              ]
+            },
+            "description": "Search for users by name or email address (admin only).\n\nUseful for finding a user's ID to then filter their tasks via `GET /api/admin/tasks?userId=...`."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"status\": \"success\",\n  \"data\": {\n    \"users\": [\n      { \"id\": \"clx...\", \"name\": \"John Doe\", \"email\": \"user@tasktracker.com\", \"role\": \"USER\" }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Cases",
+      "description": "Requests that demonstrate error handling.",
+      "item": [
+        {
+          "name": "401 — No Auth Cookie",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Demonstrates the 401 response when no session cookie is present.\n\nLog out first (or clear cookies in Postman), then send this request."
+          },
+          "response": [
+            {
+              "name": "401 Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"No token provided\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "403 — Admin Route as User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "tasks"]
+            },
+            "description": "Demonstrates the 403 Forbidden response when a USER tries to access an admin-only route.\n\nLogin as a regular user first, then send this request."
+          },
+          "response": [
+            {
+              "name": "403 Forbidden",
+              "status": "Forbidden",
+              "code": 403,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Forbidden: insufficient role\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "400 — Validation Error (Create Task)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"\",\n  \"status\": \"INVALID_STATUS\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks"]
+            },
+            "description": "Demonstrates Zod validation errors — an empty title and an invalid status enum value."
+          },
+          "response": [
+            {
+              "name": "400 Bad Request",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    { \"field\": \"title\", \"message\": \"Title is required\" },\n    { \"field\": \"status\", \"message\": \"Invalid enum value. Expected 'TODO' | 'IN_PROGRESS' | 'DONE', received 'INVALID_STATUS'\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "404 — Task Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tasks/non-existent-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tasks", "non-existent-id"]
+            },
+            "description": "Demonstrates the 404 response for a task ID that does not exist."
+          },
+          "response": [
+            {
+              "name": "404 Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"status\": \"fail\",\n  \"message\": \"Task not found\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

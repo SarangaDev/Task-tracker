@@ -59,30 +59,30 @@ const createSession = async (userData: {
 
 /** Authenticated GET helper. */
 const authGet = (path: string, session: AuthSession) =>
-  request(app).get(path).set('Cookie', session.cookieHeader);
+  request(app).get(path).set('Cookie', session?.cookieHeader || '');
 
 /** Authenticated POST helper. */
 const authPost = (path: string, session: AuthSession, body: object) =>
   request(app)
     .post(path)
-    .set('Cookie', session.cookieHeader)
-    .set('X-CSRF-Token', session.csrfToken)
+    .set('Cookie', session?.cookieHeader || '')
+    .set('X-CSRF-Token', session?.csrfToken || '')
     .send(body);
 
 /** Authenticated PUT helper. */
 const authPut = (path: string, session: AuthSession, body: object) =>
   request(app)
     .put(path)
-    .set('Cookie', session.cookieHeader)
-    .set('X-CSRF-Token', session.csrfToken)
+    .set('Cookie', session?.cookieHeader || '')
+    .set('X-CSRF-Token', session?.csrfToken || '')
     .send(body);
 
 /** Authenticated DELETE helper. */
 const authDelete = (path: string, session: AuthSession) =>
   request(app)
     .delete(path)
-    .set('Cookie', session.cookieHeader)
-    .set('X-CSRF-Token', session.csrfToken);
+    .set('Cookie', session?.cookieHeader || '')
+    .set('X-CSRF-Token', session?.csrfToken || '');
 
 // ─────────────────────────────────────────────────────────────────────────────
 
