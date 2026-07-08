@@ -2,26 +2,27 @@ import { defineStore } from 'pinia';
 import api from '../services/api';
 import { initSocket, disconnectSocket } from '../services/socket';
 import { ref } from 'vue';
+import type { User } from '../types';
 
 export const useAuthStore = defineStore('auth', () => {
   // ─── State ──────────────────────────────────────────────────────────────────
   // The JWT now lives in an HttpOnly cookie — JS never touches it.
   // We only keep the user profile in memory (re-hydrated via /me on page load).
-  const user = ref<any | null>(null);
+  const user = ref<User | null>(null);
 
   // ─── Actions ────────────────────────────────────────────────────────────────
-  const setAuth = (newUser: any) => {
+  const setAuth = (newUser: User) => {
     user.value = newUser;
     initSocket();
   };
 
-  const login = async (credentials: any) => {
+  const login = async (credentials: Record<string, unknown>) => {
     const res = await api.post('/auth/login', credentials);
     // Token is set server-side as an HttpOnly cookie — we only store the user
     setAuth(res.data.data.user);
   };
 
-  const register = async (data: any) => {
+  const register = async (data: Record<string, unknown>) => {
     const res = await api.post('/auth/register', data);
     setAuth(res.data.data.user);
   };

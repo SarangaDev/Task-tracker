@@ -22,11 +22,12 @@ const handleLogin = async () => {
   try {
     await authStore.login({ email: email.value, password: password.value });
     router.push('/');
-  } catch (err: any) {
-    if (err.response?.data?.errors?.length) {
-      error.value = err.response.data.errors.map((e: any) => e.message).join(', ');
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { errors?: { message: string }[], message?: string } } };
+    if (e.response?.data?.errors) {
+      error.value = e.response.data.errors.map((errItem) => errItem.message).join(', ');
     } else {
-      error.value = err.response?.data?.message || 'Login failed';
+      error.value = e.response?.data?.message || 'Login failed';
     }
   } finally {
     loading.value = false;

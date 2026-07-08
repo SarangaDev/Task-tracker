@@ -7,6 +7,7 @@ import TaskModal from '../components/TaskModal.vue';
 import { useAuthStore } from '../stores/auth.store';
 import { getSocket } from '../services/socket';
 import api from '../services/api';
+import type { User } from '../types';
 
 const taskStore = useTaskStore();
 const authStore = useAuthStore();
@@ -28,13 +29,13 @@ const filters = ref({
 
 const searchId = ref('');
 const userSearch = ref('');
-const userSearchResults = ref<any[]>([]);
+const userSearchResults = ref<User[]>([]);
 const isSearchingUsers = ref(false);
 const showNoResults = ref(false);
-let searchTimeout: any = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const loadTasks = () => {
-  const query: any = { page: filters.value.page, limit: filters.value.limit };
+  const query: Record<string, unknown> = { page: filters.value.page, limit: filters.value.limit };
   if (filters.value.status) query.status = filters.value.status;
   if (filters.value.priority) query.priority = filters.value.priority;
   if (filters.value.userId && authStore.user?.role === 'ADMIN') query.userId = filters.value.userId;
@@ -86,7 +87,7 @@ const handleUserSearchInput = () => {
   }, 300);
 };
 
-const selectUser = (user: any) => {
+const selectUser = (user: User) => {
   userSearch.value = user.name;
   filters.value.userId = user.id;
   userSearchResults.value = [];

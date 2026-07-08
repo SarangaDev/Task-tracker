@@ -2,9 +2,10 @@
 import { ref, computed } from 'vue';
 import { format } from 'date-fns';
 import { useAuthStore } from '../stores/auth.store';
+import type { Task } from '../types';
 
 const props = defineProps<{
-  task: any
+  task: Task
 }>();
 
 const _emit = defineEmits(['close']);
@@ -23,7 +24,7 @@ const priorityClass = computed(() => `priority-${props.task.priority.toLowerCase
 
 const formattedDate = computed(() => {
   if (!props.task.dueDate) return 'No due date';
-  return format(new Date(props.task.dueDate), 'MMM d, yyyy');
+  return format(new Date(props.task.dueDate as string), 'MMM d, yyyy');
 });
 </script>
 

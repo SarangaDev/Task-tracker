@@ -36,11 +36,12 @@ const handleRegister = async () => {
   try {
     await authStore.register({ name: name.value, email: email.value, password: password.value });
     router.push('/');
-  } catch (err: any) {
-    if (err.response?.data?.errors?.length) {
-      error.value = err.response.data.errors.map((e: any) => e.message).join(', ');
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { errors?: { message: string }[] } } };
+    if (e.response?.data?.errors) {
+      error.value = e.response.data.errors.map((errItem) => errItem.message).join(', ');
     } else {
-      error.value = err.response?.data?.message || 'Registration failed';
+      error.value = 'Registration failed';
     }
   } finally {
     loading.value = false;

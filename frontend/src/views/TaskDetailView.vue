@@ -4,12 +4,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTaskStore } from '../stores/task.store';
 import TaskModal from '../components/TaskModal.vue';
 import { format } from 'date-fns';
+import type { Task } from '../types';
 
 const route = useRoute();
 const router = useRouter();
 const taskStore = useTaskStore();
 
-const task = ref<any>(null);
+const task = ref<Task | null>(null);
 const loading = ref(true);
 const error = ref('');
 const isEditModalOpen = ref(false);
@@ -30,10 +31,13 @@ onMounted(loadTask);
 const handleDelete = async () => {
   if (confirm('Are you sure you want to delete this task?')) {
     try {
-      await taskStore.deleteTask(task.value.id);
-      router.push('/');
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Failed to delete task');
+      if (task.value) {
+        await taskStore.deleteTask(task.value.id);
+        router.push('/');
+      }
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      alert(e.response?.data?.message || 'Failed to delete task');
     }
   }
 };
@@ -75,7 +79,7 @@ const handleDelete = async () => {
         </div>
         <div class="meta-item">
           <span class="label">Created:</span>
-          <span class="value">{{ format(new Date(task.createdAt), 'PPP') }}</span>
+          <span class="value">{{ task.createdAt ? format(new Date(task.createdAt as string), 'MMM d, yyyy h:mm a') : 'N/A' }}</span>
         </div>
       </div>
 
@@ -88,7 +92,7 @@ const handleDelete = async () => {
 
     <TaskModal 
       v-if="isEditModalOpen" 
-      :task="task" 
+      :task="task || undefined" 
       @close="isEditModalOpen = false; loadTask()" 
     />
   </div>

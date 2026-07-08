@@ -2,9 +2,10 @@
 import { ref, onMounted } from 'vue';
 import { useTaskStore } from '../stores/task.store';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
+import type { Task } from '../types';
 
 const props = defineProps<{
-  task?: any
+  task?: Task
 }>();
 
 const emit = defineEmits(['close']);
@@ -48,8 +49,9 @@ const handleSubmit = async () => {
       await taskStore.createTask(payload);
     }
     emit('close');
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Operation failed';
+  } catch (err: unknown) {
+    const e = err as { response?: { data?: { message?: string } } };
+    error.value = e.response?.data?.message || 'Operation failed';
   } finally {
     loading.value = false;
   }

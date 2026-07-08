@@ -3,9 +3,10 @@ import { ref } from 'vue';
 import api from '../services/api';
 import { getSocket } from '../services/socket';
 import { useAuthStore } from './auth.store';
+import type { Task } from '../types';
 
 export const useTaskStore = defineStore('task', () => {
-  const tasks = ref<any[]>([]);
+  const tasks = ref<Task[]>([]);
   const meta = ref({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -18,8 +19,9 @@ export const useTaskStore = defineStore('task', () => {
       const res = await api.get(endpoint, { params: query });
       tasks.value = res.data.data;
       meta.value = res.data.meta;
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Failed to fetch tasks';
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      error.value = e.response?.data?.message || 'Failed to fetch tasks';
     } finally {
       loading.value = false;
     }
@@ -32,12 +34,12 @@ export const useTaskStore = defineStore('task', () => {
     return res.data.data.task;
   };
 
-  const createTask = async (data: any) => {
+  const createTask = async (data: Record<string, unknown>) => {
     await api.post('/tasks', data);
     // Realtime event will update the list
   };
 
-  const updateTask = async (id: string, data: any) => {
+  const updateTask = async (id: string, data: Record<string, unknown>) => {
     const authStore = useAuthStore();
     const endpoint = authStore.user?.role === 'ADMIN' ? `/admin/tasks/${id}` : `/tasks/${id}`;
     await api.put(endpoint, data);

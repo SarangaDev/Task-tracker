@@ -3,9 +3,10 @@ import { ref, watch } from 'vue';
 import TaskCard from './TaskCard.vue';
 import { useTaskStore } from '../stores/task.store';
 import draggable from 'vuedraggable';
+import type { Task } from '../types';
 
 const props = defineProps<{
-  tasks: any[]
+  tasks: Task[]
 }>();
 
 const taskStore = useTaskStore();
@@ -17,9 +18,9 @@ const columns = [
 ];
 
 const columnsData = ref({
-  TODO: [] as any[],
-  IN_PROGRESS: [] as any[],
-  DONE: [] as any[]
+  TODO: [] as Task[],
+  IN_PROGRESS: [] as Task[],
+  DONE: [] as Task[]
 });
 
 const isDragging = ref(false);
@@ -31,7 +32,7 @@ watch(() => props.tasks, (newTasks) => {
   columnsData.value.DONE = newTasks.filter(t => t.status === 'DONE');
 }, { immediate: true, deep: true });
 
-const onChange = async (event: any, status: string) => {
+const onChange = async (event: { added?: { element: Task } }, status: string) => {
   if (event.added) {
     const task = event.added.element;
     if (task.status !== status) {
@@ -69,7 +70,7 @@ const onChange = async (event: any, status: string) => {
           class="draggable-list"
           ghost-class="ghost-card"
           animation="200"
-          @change="(e: any) => onChange(e, col.id)"
+          @change="(e: { added?: { element: Task } }) => onChange(e, col.id)"
           @start="isDragging = true"
           @end="isDragging = false"
         >
