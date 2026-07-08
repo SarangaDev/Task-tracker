@@ -205,6 +205,7 @@ jobs:
           # 5. Start Caddy for free SSL and reverse proxy
           docker stop caddy || true
           docker rm caddy || true
+          # Caddy automatically handles HTTPS via Let's Encrypt and routes traffic to the app
           docker run -d \
             --name caddy \
             --network task-network \
@@ -213,8 +214,3 @@ jobs:
             -v caddy_data:/data \
             caddy:2-alpine \
             caddy reverse-proxy --from task-tracker-saranga.duckdns.org --to task-tracker:5000
-
-          # 6. Seed the database
-          # Wait 10 seconds for the app container to finish running migrations
-          sleep 10
-          docker exec task-tracker sh -c "npm install -g tsx && tsx prisma/seed.ts"
