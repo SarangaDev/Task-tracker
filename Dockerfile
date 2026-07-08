@@ -55,5 +55,5 @@ COPY --from=frontend-builder /app/frontend/dist ./public
 EXPOSE 5000
 ENV NODE_ENV=production
 
-# Run database migrations and then start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
+# Run database schema push and then start the server
+CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm start"]
