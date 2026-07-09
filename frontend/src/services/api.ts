@@ -41,11 +41,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      const authStore = useAuthStore();
-      // Await logout so the server clears the cookie before we redirect
-      await authStore.logout();
-      // Use window.location to avoid importing the router (circular dep risk)
-      window.location.href = '/login';
+      const originalUrl = error.config?.url || '';
+      if (!originalUrl.includes('/auth/me') && window.location.pathname !== '/login') {
+        const authStore = useAuthStore();
+        // Await logout so the server clears the cookie before we redirect
+        await authStore.logout();
+        // Use window.location to avoid importing the router (circular dep risk)
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
